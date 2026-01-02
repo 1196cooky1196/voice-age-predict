@@ -34,7 +34,7 @@ flowchart TD
     K --> L[Predict Top-k Labels<br/>softmax probabilities]
 
     C -.-> M[Optional: Permutation Importance<br/>feature impact report]
-'''
+```
 
 ✅ Pipeline Notes (그림 설명)
 
@@ -66,7 +66,7 @@ flowchart LR
     DP5 --> D6[Dense 1024 + ReLU] --> BN6[BatchNorm]
 
     BN6 --> OUT[Dense = num_classes<br/>Softmax]
-'''
+```
 
 ✅ Model Notes (그림 설명)
 
