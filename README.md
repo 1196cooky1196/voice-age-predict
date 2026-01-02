@@ -34,7 +34,7 @@ flowchart TD
     K --> L[Predict Top-k Labels<br/>softmax probabilities]
 
     C -.-> M[Optional: Permutation Importance<br/>feature impact report]
-'''
+```
 
 ✅ Pipeline Notes (그림 설명)
 
