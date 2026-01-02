@@ -24,21 +24,21 @@ Code organization:
 ## 🧱 Execution Pipeline (End-to-End)
 
 ```mermaid
-flowchart TD
-    A["Common Voice audio clips\n(wav / mp3 / m4a)"] --> B["Preprocess\nFeature extraction (librosa + stats)"]
-    B --> C["Feature table\nCSV / XLSX"]
-    C --> D["Split\ntrain / val / test\n(stratified by label)"]
-    D --> E["Scale features\nStandardScaler\n(gender column kept raw)"]
-    E --> F["Train MLP (Keras)\nDense(1024)+BN+Dropout x6"]
-    F --> G["Save best checkpoint\nbest_model.keras"]
+%%{init: {'themeVariables': {'fontSize':'18px'}, 'flowchart': {'nodeSpacing': 70, 'rankSpacing': 80}}}%%
+flowchart TB
+  A["Audio Clips\n(wav/mp3/m4a)"] --> B["Preprocess\nExtract features\n(librosa + stats)"]
+  B --> C["Feature Table\nCSV / XLSX"]
+  C --> D["Split\ntrain / val / test\n(stratified)"]
+  D --> E["Scale\nStandardScaler\n(gender kept raw)"]
+  E --> F["Train\nMLP (Keras)\n+ callbacks"]
+  F --> G["Save Best\nbest_model.keras"]
 
-    G --> H["Inference (single audio)"]
-    H --> I["If needed: convert to wav\n(ffmpeg)"]
-    I --> J["Extract same features\n+ gender_hint"]
-    J --> K["Apply scaler\n(gender kept raw)"]
-    K --> L["Top-k prediction\nsoftmax probabilities"]
+  G --> H["Inference\n(single audio)"]
+  H --> I["Optional\nffmpeg convert\nm4a → wav"]
+  I --> J["Extract + Scale\n(same pipeline)"]
+  J --> K["Top-k Output\nsoftmax probs"]
 
-    C -.-> M["Optional\nPermutation importance"]
+  C -.-> L["Optional\nPermutation\nImportance"]
 ```
 
 ### ✅ Pipeline Notes (그림 아래 설명)
@@ -64,22 +64,14 @@ Example feature breakdown (110):
 → 3 + 50 + 50 + 4 + 3 = 110
 
 ```mermaid
-flowchart LR
-    X["Input vector (111)\n[gender(1) + audio features(110)]"] --> BN0["BatchNorm"]
-
-    BN0 --> D1["Dense 1024 + ReLU"] --> BN1["BatchNorm"] --> DP1["Dropout 0.2"]
-    DP1 --> D2["Dense 1024 + ReLU"] --> BN2["BatchNorm"] --> DP2["Dropout 0.1"]
-    DP2 --> D3["Dense 1024 + ReLU"] --> BN3["BatchNorm"] --> DP3["Dropout 0.2"]
-    DP3 --> D4["Dense 1024 + ReLU"] --> BN4["BatchNorm"] --> DP4["Dropout 0.1"]
-    DP4 --> D5["Dense 1024 + ReLU"] --> BN5["BatchNorm"] --> DP5["Dropout 0.2"]
-    DP5 --> D6["Dense 1024 + ReLU"] --> BN6["BatchNorm"]
-
-    BN6 --> OUT["Dense = num_classes\nSoftmax"]
+%%{init: {'themeVariables': {'fontSize':'18px'}, 'flowchart': {'nodeSpacing': 80, 'rankSpacing': 90}}}%%
+flowchart TB
+  X["Input Vector (111)\n= gender(1) + acoustic features(110)"] --> BN0["BatchNorm"]
+  BN0 --> BLK["MLP Block ×6\nDense(1024) + ReLU\nBatchNorm\nDropout(0.1~0.2)"]
+  BLK --> OUT["Dense(num_classes)\nSoftmax"]
 ```
 
 ### ✅ Model Notes (그림 아래 설명)
 - 스펙트로그램 CNN/RNN 없이, **특징공학 + MLP**로 분류를 수행한다.
-- `Dense(1024) + BatchNorm + Dropout` 블록을 여러 번 쌓아 비선형 결합을 학습하고, 마지막에 `softmax(num_classes)`로 클래스 확률을 출력한다.
+- `Dense(1024) + BatchNorm + Dropout` 블록을 **6번 반복**해 비선형 결합을 학습하고, 마지막에 `softmax(num_classes)`로 클래스 확률을 출력한다.
 - `num_classes`는 라벨 정의(`Gender_Age`, `Gender`, `Age`)에 따라 달라지며, 학습 데이터의 유니크 라벨 개수로 결정된다.
-
----
